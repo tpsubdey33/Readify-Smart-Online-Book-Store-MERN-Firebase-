@@ -1,11 +1,6 @@
 const mongoose = require('mongoose');
 
 const bookSchema = new mongoose.Schema({
-    bookseller: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true
-    },
     title: {
         type: String,
         required: true,
@@ -98,6 +93,11 @@ const bookSchema = new mongoose.Schema({
             default: 0
         }
     },
+    addedBy: {
+        type: String,
+        enum: ['admin', 'bookseller'],
+        default: 'bookseller'
+    },
     createdAt: {
         type: Date,
         default: Date.now,
@@ -110,6 +110,7 @@ const bookSchema = new mongoose.Schema({
 bookSchema.index({ title: 'text', author: 'text', description: 'text' });
 bookSchema.index({ category: 1, trending: -1 });
 bookSchema.index({ seller: 1, status: 1 });
+bookSchema.index({ addedBy: 1 });
 
 const Book = mongoose.model('Book', bookSchema);
 

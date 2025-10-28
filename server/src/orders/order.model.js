@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const orderSchema = new mongoose.Schema(
   {
-    tems: [
+    items: [  // Fixed: Changed 'tems' to 'items'
       {
         book: {
           type: mongoose.Schema.Types.ObjectId,
