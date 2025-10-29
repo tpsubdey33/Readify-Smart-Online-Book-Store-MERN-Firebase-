@@ -1,12 +1,13 @@
 // src/hooks/useSubscribe.js
 import { useState } from 'react';
 import axios from 'axios';
-import baseURL from '../utils/baseURL';
+import getBaseUrl from '../utils/baseURL';
 
 export const useSubscribe = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const baseURL = getBaseUrl();
 
   const subscribe = async (email, source = 'newsletter') => {
     setLoading(true);
