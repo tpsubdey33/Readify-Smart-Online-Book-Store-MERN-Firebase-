@@ -1,11 +1,11 @@
-import React from 'react'
+import React, { forwardRef } from 'react'
 import footerLogo from "../assets/footer-logo.png"
 import { FaFacebook, FaInstagram, FaTwitter, FaMapMarkerAlt, FaPhone, FaEnvelope, FaArrowRight } from "react-icons/fa"
 import { Link } from 'react-router-dom'
 
-const Footer = () => {
+const Footer = forwardRef((props, ref) => {
   return (
-    <footer className="bg-gray-900 text-white">
+    <footer ref={ref} id={props.id} className="bg-gray-900 text-white">
       {/* Main Footer Content */}
       <div className="container mx-auto py-12 px-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -34,7 +34,7 @@ const Footer = () => {
 
           {/* Quick Links */}
           <div className="lg:col-span-1">
-            <h3 className="text-xl font-bold mb-6 relative pb-2 after:content-[''] after:absolute after:left-0 after:bottom-0 after:w-12 after:h-1 after:bg-primary">
+            <h3 className="text-xl font-bold mb-6 relative pb-2 after:content-[''] after:absolute after:left-0 after:bottom-0 after:w-12 after:h-1 after:bg-blue-500">
               Quick Links
             </h3>
             <ul className="space-y-3">
@@ -47,7 +47,7 @@ const Footer = () => {
                 { name: 'Deals', href: '/deals' }
               ].map((link) => (
                 <li key={link.name}>
-                  <Link to={link.href} className="text-gray-300 hover:text-primary transition-colors duration-300 flex items-center group">
+                  <Link to={link.href} className="text-gray-300 hover:text-blue-400 transition-colors duration-300 flex items-center group">
                     <FaArrowRight className="mr-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     {link.name}
                   </Link>
@@ -58,7 +58,7 @@ const Footer = () => {
 
           {/* Customer Service */}
           <div className="lg:col-span-1">
-            <h3 className="text-xl font-bold mb-6 relative pb-2 after:content-[''] after:absolute after:left-0 after:bottom-0 after:w-12 after:h-1 after:bg-primary">
+            <h3 className="text-xl font-bold mb-6 relative pb-2 after:content-[''] after:absolute after:left-0 after:bottom-0 after:w-12 after:h-1 after:bg-blue-500">
               Support
             </h3>
             <ul className="space-y-3">
@@ -71,7 +71,7 @@ const Footer = () => {
                 { name: 'Size Guide', href: '/size-guide' }
               ].map((link) => (
                 <li key={link.name}>
-                  <Link to={link.href} className="text-gray-300 hover:text-primary transition-colors duration-300 flex items-center group">
+                  <Link to={link.href} className="text-gray-300 hover:text-blue-400 transition-colors duration-300 flex items-center group">
                     <FaArrowRight className="mr-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     {link.name}
                   </Link>
@@ -82,30 +82,30 @@ const Footer = () => {
 
           {/* Contact Info */}
           <div className="lg:col-span-1">
-            <h3 className="text-xl font-bold mb-6 relative pb-2 after:content-[''] after:absolute after:left-0 after:bottom-0 after:w-12 after:h-1 after:bg-primary">
+            <h3 className="text-xl font-bold mb-6 relative pb-2 after:content-[''] after:absolute after:left-0 after:bottom-0 after:w-12 after:h-1 after:bg-blue-500">
               Contact Us
             </h3>
             <div className="space-y-4">
               <div className="flex items-start space-x-3">
-                <FaMapMarkerAlt className="text-primary mt-1 flex-shrink-0" />
+                <FaMapMarkerAlt className="text-blue-400 mt-1 flex-shrink-0" />
                 <p className="text-gray-300">
                   Shyamnagar, North 24 PGS<br />
                   West Bengal, 743127
                 </p>
               </div>
               <div className="flex items-center space-x-3">
-                <FaPhone className="text-primary flex-shrink-0" />
+                <FaPhone className="text-blue-400 flex-shrink-0" />
                 <p className="text-gray-300">7003539303</p>
               </div>
               <div className="flex items-center space-x-3">
-                <FaEnvelope className="text-primary flex-shrink-0" />
+                <FaEnvelope className="text-blue-400 flex-shrink-0" />
                 <p className="text-gray-300">support@bookstore.com</p>
               </div>
             </div>
 
             {/* Business Hours */}
             <div className="mt-6 p-4 bg-gray-800 rounded-lg">
-              <h4 className="font-semibold mb-2 text-primary">Store Hours</h4>
+              <h4 className="font-semibold mb-2 text-blue-400">Store Hours</h4>
               <div className="text-sm text-gray-300 space-y-1">
                 <div className="flex justify-between">
                   <span>Mon - Fri:</span>
@@ -136,16 +136,16 @@ const Footer = () => {
 
             {/* Legal Links */}
             <div className="flex flex-wrap justify-center space-x-6 text-sm">
-              <Link to="/privacy-policy" className="text-gray-400 hover:text-primary transition-colors duration-300">
+              <Link to="/privacy-policy" className="text-gray-400 hover:text-blue-400 transition-colors duration-300">
                 Privacy Policy
               </Link>
-              <Link to="/terms-of-service" className="text-gray-400 hover:text-primary transition-colors duration-300">
+              <Link to="/terms-of-service" className="text-gray-400 hover:text-blue-400 transition-colors duration-300">
                 Terms of Service
               </Link>
-              <Link to="/cookie-policy" className="text-gray-400 hover:text-primary transition-colors duration-300">
+              <Link to="/cookie-policy" className="text-gray-400 hover:text-blue-400 transition-colors duration-300">
                 Cookie Policy
               </Link>
-              <Link to="/refund-policy" className="text-gray-400 hover:text-primary transition-colors duration-300">
+              <Link to="/refund-policy" className="text-gray-400 hover:text-blue-400 transition-colors duration-300">
                 Refund Policy
               </Link>
             </div>
@@ -164,6 +164,8 @@ const Footer = () => {
       </div>
     </footer>
   )
-}
+})
+
+Footer.displayName = 'Footer'
 
 export default Footer

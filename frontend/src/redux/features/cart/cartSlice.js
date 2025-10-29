@@ -1,5 +1,4 @@
 import { createSlice } from "@reduxjs/toolkit";
-import Swal from "sweetalert2";
 
 // Load cart from localStorage
 const loadCartFromStorage = () => {
@@ -55,12 +54,7 @@ const cartSlice = createSlice({
       
       // Validate required fields
       if (!product?._id || !product?.title) {
-        Swal.fire({
-          title: "Invalid Product",
-          text: "Product information is incomplete.",
-          icon: "error",
-          confirmButtonColor: "#d33",
-        });
+        console.error("Invalid product data:", product);
         return;
       }
 
@@ -70,27 +64,13 @@ const cartSlice = createSlice({
         // Check stock availability
         const currentStock = product.stock || existingItem.stock || 999;
         if (existingItem.quantity >= currentStock) {
-          Swal.fire({
-            title: "Stock Limit Reached",
-            text: `Only ${currentStock} copies available in stock.`,
-            icon: "warning",
-            confirmButtonColor: "#3085d6",
-          });
+          console.warn(`Stock limit reached for ${product.title}`);
           return;
         }
         
         // Increase quantity
         existingItem.quantity += 1;
         existingItem.totalPrice = existingItem.quantity * (existingItem.newPrice || existingItem.price);
-        
-        Swal.fire({
-          position: "top-end",
-          icon: "success",
-          title: "Quantity Updated",
-          text: `Increased quantity of "${product.title}" to ${existingItem.quantity}`,
-          showConfirmButton: false,
-          timer: 1500
-        });
       } else {
         // Add new item to cart
         const newItem = {
@@ -100,15 +80,6 @@ const cartSlice = createSlice({
           addedAt: new Date().toISOString()
         };
         state.cartItems.push(newItem);
-        
-        Swal.fire({
-          position: "top-end",
-          icon: "success",
-          title: "Added to Cart",
-          text: `"${product.title}" added to cart`,
-          showConfirmButton: false,
-          timer: 1500
-        });
       }
       
       // Update totals and save to storage
@@ -123,7 +94,6 @@ const cartSlice = createSlice({
       const itemIndex = state.cartItems.findIndex(item => item._id === productId);
       
       if (itemIndex !== -1) {
-        const removedItem = state.cartItems[itemIndex];
         state.cartItems.splice(itemIndex, 1);
         
         // Update totals
@@ -131,14 +101,6 @@ const cartSlice = createSlice({
         state.totalItems = totals.totalItems;
         state.totalAmount = totals.totalAmount;
         saveCartToStorage(state.cartItems);
-        
-        Swal.fire({
-          title: "Removed from Cart",
-          text: `"${removedItem.title}" has been removed from your cart.`,
-          icon: "success",
-          timer: 1500,
-          showConfirmButton: false
-        });
       }
     },
     
@@ -146,12 +108,7 @@ const cartSlice = createSlice({
       const { itemId, newQuantity } = action.payload;
       
       if (newQuantity < 1) {
-        Swal.fire({
-          title: "Invalid Quantity",
-          text: "Quantity must be at least 1.",
-          icon: "warning",
-          confirmButtonColor: "#3085d6",
-        });
+        console.warn("Quantity must be at least 1");
         return;
       }
       
@@ -161,12 +118,7 @@ const cartSlice = createSlice({
         // Check stock limit
         const currentStock = item.stock || 999;
         if (newQuantity > currentStock) {
-          Swal.fire({
-            title: "Stock Limit",
-            text: `Only ${currentStock} copies available.`,
-            icon: "warning",
-            confirmButtonColor: "#3085d6",
-          });
+          console.warn(`Only ${currentStock} copies available`);
           return;
         }
         
@@ -182,33 +134,10 @@ const cartSlice = createSlice({
     },
     
     clearCart: (state) => {
-      if (state.cartItems.length === 0) return;
-      
-      Swal.fire({
-        title: "Clear Cart?",
-        text: "This will remove all items from your cart.",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#d33",
-        cancelButtonColor: "#3085d6",
-        confirmButtonText: "Yes, clear it!",
-        cancelButtonText: "Cancel"
-      }).then((result) => {
-        if (result.isConfirmed) {
-          state.cartItems = [];
-          state.totalAmount = 0;
-          state.totalItems = 0;
-          localStorage.removeItem('bookstore_cart');
-          
-          Swal.fire({
-            title: "Cleared!",
-            text: "Your cart has been cleared.",
-            icon: "success",
-            timer: 1500,
-            showConfirmButton: false
-          });
-        }
-      });
+      state.cartItems = [];
+      state.totalAmount = 0;
+      state.totalItems = 0;
+      localStorage.removeItem('bookstore_cart');
     },
     
     // Force clear cart without confirmation (useful for after checkout)

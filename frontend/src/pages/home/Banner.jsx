@@ -1,7 +1,10 @@
 import React from 'react'
 import bannerImg from "../../assets/banner.png"
+import { useScroll } from './Home'
 
 const Banner = () => {
+  const { scrollToNewsletter, scrollToFooter } = useScroll()
+
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -33,10 +36,16 @@ const Banner = () => {
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-4">
-                <button className='btn-primary px-8 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300'>
+                <button 
+                  onClick={scrollToNewsletter}
+                  className='btn-primary px-8 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300'
+                >
                   Subscribe Now
                 </button>
-                <button className='px-8 py-4 text-lg font-semibold text-gray-700 dark:text-gray-300 border-2 border-gray-300 dark:border-gray-600 rounded-xl hover:border-blue-500 dark:hover:border-blue-400 transition-all duration-300'>
+                <button 
+                  onClick={scrollToFooter}
+                  className='px-8 py-4 text-lg font-semibold text-gray-700 dark:text-gray-300 border-2 border-gray-300 dark:border-gray-600 rounded-xl hover:border-blue-500 dark:hover:border-blue-400 transition-all duration-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+                >
                   Learn More
                 </button>
               </div>

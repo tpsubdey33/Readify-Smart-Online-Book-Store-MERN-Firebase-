@@ -1,6 +1,7 @@
 import React from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { Link } from 'react-router-dom'
+import Swal from 'sweetalert2'
 import { 
   clearCart, 
   removeFromCart, 
@@ -15,11 +16,62 @@ const CartPage = () => {
     const cartSummary = useSelector(selectCartSummary)
 
     const handleRemoveFromCart = (productId) => {
-        dispatch(removeFromCart(productId))
+        Swal.fire({
+            title: "Remove Item?",
+            text: "This item will be removed from your cart.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
+            confirmButtonText: "Yes, remove it!",
+            cancelButtonText: "Cancel"
+        }).then((result) => {
+            if (result.isConfirmed) {
+                dispatch(removeFromCart(productId))
+                Swal.fire({
+                    title: "Removed!",
+                    text: "Item has been removed from your cart.",
+                    icon: "success",
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+            }
+        });
     }
 
     const handleClearCart = () => {
-        dispatch(clearCart())
+        if (cartItems.length === 0) {
+            Swal.fire({
+                title: "Cart is Empty",
+                text: "Your cart is already empty.",
+                icon: "info",
+                timer: 1500,
+                showConfirmButton: false
+            });
+            return;
+        }
+
+        Swal.fire({
+            title: "Clear Cart?",
+            text: "This will remove all items from your cart. This action cannot be undone.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
+            confirmButtonText: "Yes, clear cart!",
+            cancelButtonText: "Cancel"
+        }).then((result) => {
+            if (result.isConfirmed) {
+                dispatch(clearCart());
+                Swal.fire({
+                    title: "Cart Cleared!",
+                    text: "All items have been removed from your cart.",
+                    icon: "success",
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+            }
+        });
     }
 
     const handleQuantityChange = (productId, newQuantity) => {
@@ -28,12 +80,26 @@ const CartPage = () => {
 
     const handleIncreaseQuantity = (productId) => {
         const product = cartItems.find(item => item._id === productId)
-        if (product) handleQuantityChange(productId, product.quantity + 1)
+        if (product) {
+            const currentStock = product.stock || 999;
+            if (product.quantity >= currentStock) {
+                Swal.fire({
+                    title: "Stock Limit Reached",
+                    text: `Only ${currentStock} copies available in stock.`,
+                    icon: "warning",
+                    confirmButtonColor: "#3085d6",
+                });
+                return;
+            }
+            handleQuantityChange(productId, product.quantity + 1)
+        }
     }
 
     const handleDecreaseQuantity = (productId) => {
         const product = cartItems.find(item => item._id === productId)
-        if (product && product.quantity > 1) handleQuantityChange(productId, product.quantity - 1)
+        if (product && product.quantity > 1) {
+            handleQuantityChange(productId, product.quantity - 1)
+        }
     }
 
     return (

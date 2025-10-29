@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, forwardRef } from 'react'
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination, Navigation, Autoplay } from 'swiper/modules';
 import { Link } from 'react-router-dom';
@@ -34,10 +34,27 @@ const news = [
         "date": "5 hours ago",
         "readTime": "4 min read"
     },
-    // ... rest of your news data
+    {
+        "id": 3,
+        "title": "New Study Reveals Benefits of Mediterranean Diet",
+        "description": "A comprehensive study confirms the long-term health benefits of the Mediterranean diet, showing significant reductions in heart disease and improved cognitive function.",
+        "image": news3,
+        "category": "Health",
+        "date": "1 day ago",
+        "readTime": "5 min read"
+    },
+    {
+        "id": 4,
+        "title": "Stock Markets Reach Record Highs",
+        "description": "Global stock markets surge to record levels as investor confidence grows amid positive economic indicators and strong corporate earnings reports.",
+        "image": news4,
+        "category": "Business",
+        "date": "2 days ago",
+        "readTime": "4 min read"
+    }
 ]
 
-const News = () => {
+const News = forwardRef((props, ref) => {
   const [activeCategory, setActiveCategory] = useState('All');
   const [email, setEmail] = useState('');
   const { subscribe, loading, error, success, reset } = useSubscribe();
@@ -71,7 +88,7 @@ const News = () => {
   };
 
   return (
-    <section className='py-16 lg:py-24 bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-800'>
+    <section ref={ref} className='py-16 lg:py-24 bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-800'>
       <div className='container mx-auto px-4 sm:px-6 lg:px-8'>
         {/* Success/Error Messages */}
         {success && (
@@ -132,8 +149,71 @@ const News = () => {
           </div>
         )}
 
-        {/* Your existing News component JSX remains the same */}
-        {/* ... */}
+        {/* News Content */}
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+            Latest News & Updates
+          </h2>
+          <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+            Stay informed with the latest news from the literary world and beyond
+          </p>
+        </div>
+
+        {/* Category Filters */}
+        <div className="flex flex-wrap justify-center gap-4 mb-12">
+          {categories.map((category) => (
+            <button
+              key={category}
+              onClick={() => setActiveCategory(category)}
+              className={`px-6 py-3 rounded-full font-medium transition-all duration-300 ${
+                activeCategory === category
+                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25'
+                  : 'bg-white text-gray-700 hover:bg-gray-50 shadow-sm border border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700'
+              }`}
+            >
+              {category}
+            </button>
+          ))}
+        </div>
+
+        {/* News Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 mb-16">
+          {filteredNews.map((item) => (
+            <div key={item.id} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group">
+              <div className="relative overflow-hidden">
+                <img
+                  src={item.image}
+                  alt={item.title}
+                  className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500"
+                />
+                <div className="absolute top-4 left-4">
+                  <span className="px-3 py-1 bg-blue-600 text-white text-sm font-medium rounded-full">
+                    {item.category}
+                  </span>
+                </div>
+              </div>
+              <div className="p-6">
+                <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-3">
+                  <span>{item.date}</span>
+                  <span className="mx-2">•</span>
+                  <span>{item.readTime}</span>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3 line-clamp-2">
+                  {item.title}
+                </h3>
+                <p className="text-gray-600 dark:text-gray-300 line-clamp-3">
+                  {item.description}
+                </p>
+                <button className="mt-4 text-blue-600 hover:text-blue-700 font-medium flex items-center gap-2 group-hover:gap-3 transition-all duration-300">
+                  Read More
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
 
         {/* Enhanced CTA Section */}
         <div className="text-center mt-16">
@@ -151,6 +231,7 @@ const News = () => {
               <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-4 justify-center max-w-md mx-auto">
                 <div className="flex-1 relative">
                   <input 
+                    id="newsletter-email"
                     type="email" 
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -195,6 +276,8 @@ const News = () => {
       </div>
     </section>
   )
-}
+})
+
+News.displayName = 'News'
 
 export default News
