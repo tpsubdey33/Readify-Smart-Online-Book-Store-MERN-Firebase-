@@ -19,7 +19,7 @@ const Navbar = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const cartItems = useSelector(state => state.cart.cartItems);
-  const { currentUser, logout } = useAuth();
+  const { currentUser, logout, backendUser } = useAuth(); // Added backendUser
   const navigate = useNavigate();
   
   const dropdownRef = useRef(null);
@@ -40,9 +40,16 @@ const Navbar = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleLogOut = () => {
-    logout();
-    setIsDropdownOpen(false);
+  // FIXED: Enhanced logout handler
+  const handleLogOut = async () => {
+    try {
+      setIsDropdownOpen(false);
+      setIsMobileMenuOpen(false);
+      await logout();
+      // Navigation will happen automatically due to state changes
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   const handleSearch = (e) => {
@@ -63,6 +70,9 @@ const Navbar = () => {
   ];
 
   const totalCartItems = cartItems.reduce((total, item) => total + (item.quantity || 1), 0);
+
+  // FIXED: Use backendUser for authentication check to be consistent
+  const isAuthenticated = !!backendUser;
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-100 sticky top-0 z-50">
@@ -147,17 +157,21 @@ const Navbar = () => {
 
             {/* User Menu */}
             <div className="relative" ref={dropdownRef}>
-              {currentUser ? (
+              {isAuthenticated ? ( // FIXED: Use backendUser for consistent authentication state
                 <>
                   <button
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                     className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <div className="h-8 w-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                      {currentUser?.email?.charAt(0).toUpperCase() || 'U'}
+                      {backendUser?.username?.charAt(0).toUpperCase() || 
+                       currentUser?.displayName?.charAt(0).toUpperCase() || 
+                       currentUser?.email?.charAt(0).toUpperCase() || 'U'}
                     </div>
                     <span className="text-gray-700 font-medium hidden sm:block">
-                      {currentUser?.displayName || currentUser?.email?.split('@')[0]}
+                      {backendUser?.username ||
+                       currentUser?.displayName || 
+                       currentUser?.email?.split('@')[0]}
                     </span>
                   </button>
 
@@ -167,10 +181,10 @@ const Navbar = () => {
                       {/* User Info */}
                       <div className="px-4 py-3 border-b border-gray-100">
                         <p className="text-sm font-medium text-gray-900">
-                          {currentUser?.displayName || 'User'}
+                          {backendUser?.username || currentUser?.displayName || 'User'}
                         </p>
                         <p className="text-sm text-gray-500 truncate">
-                          {currentUser?.email}
+                          {backendUser?.email || currentUser?.email}
                         </p>
                       </div>
 
@@ -275,7 +289,7 @@ const Navbar = () => {
                   </Link>
                 ))}
                 
-                {currentUser && (
+                {isAuthenticated && ( // FIXED: Use consistent authentication check
                   <button
                     onClick={handleLogOut}
                     className="flex items-center w-full px-4 py-3 text-lg text-red-600 hover:bg-red-50 rounded-lg transition-colors"

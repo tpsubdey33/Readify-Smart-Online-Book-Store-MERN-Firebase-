@@ -23,12 +23,12 @@ export const AuthProvider = ({children}) => {
   const [userRole, setUserRole] = useState(() => {
     const storedUser = localStorage.getItem('user');
     return storedUser ? JSON.parse(storedUser).role : null;
-});
+  });
   const [loading, setLoading] = useState(true);
   const [backendUser, setBackendUser] = useState(() => {
     const storedUser = localStorage.getItem('user');
     return storedUser ? JSON.parse(storedUser) : null;
-});
+  });
   const [error, setError] = useState(null);
 
   const clearError = () => setError(null);
@@ -73,8 +73,9 @@ export const AuthProvider = ({children}) => {
         throw new Error(backendData.message || 'Backend registration failed');
       }
 
-      // Store backend token
+      // Store backend token and user data
       localStorage.setItem('token', backendData.token);
+      localStorage.setItem('user', JSON.stringify(backendData.user));
       setBackendUser(backendData.user);
       setUserRole(backendData.user.role);
       setCurrentUser(user);
@@ -139,6 +140,7 @@ export const AuthProvider = ({children}) => {
       const backendData = await backendResponse.json();
 
       localStorage.setItem('token', backendData.token);
+      localStorage.setItem('user', JSON.stringify(backendData.user));
       setBackendUser(backendData.user);
       setUserRole(backendData.user.role);
 
@@ -195,6 +197,7 @@ export const AuthProvider = ({children}) => {
       }
 
       localStorage.setItem('token', backendData.token);
+      localStorage.setItem('user', JSON.stringify(backendData.user));
       setBackendUser(backendData.user);
       setUserRole(backendData.user.role);
 
@@ -206,18 +209,34 @@ export const AuthProvider = ({children}) => {
     }
   };
 
-  // Logout function
+  // FIXED: Enhanced Logout function
   const logout = async () => {
     try {
       setError(null);
-      await signOut(auth);
+      
+      // Clear local storage first
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      
+      // Reset state immediately
       setCurrentUser(null);
       setBackendUser(null);
       setUserRole(null);
+      
+      // Then sign out from Firebase
+      await signOut(auth);
+      
     } catch (error) {
       console.error('Logout error:', error);
       setError('Logout failed. Please try again.');
+      
+      // Even if Firebase logout fails, ensure local state is cleared
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      setCurrentUser(null);
+      setBackendUser(null);
+      setUserRole(null);
+      
       throw error;
     }
   };
@@ -238,14 +257,18 @@ export const AuthProvider = ({children}) => {
 
       if (response.ok) {
         const userData = await response.json();
+        // Update localStorage with fresh user data
+        localStorage.setItem('user', JSON.stringify(userData));
         return userData;
       } else {
         localStorage.removeItem('token');
+        localStorage.removeItem('user');
         return null;
       }
     } catch (error) {
       console.error('Backend auth check error:', error);
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
       return null;
     }
   };
@@ -261,6 +284,9 @@ export const AuthProvider = ({children}) => {
             if (backendUserData) {
               setBackendUser(backendUserData);
               setUserRole(backendUserData.role);
+            } else {
+              // If no backend user but Firebase user exists, log out
+              await logout();
             }
           } else {
             const backendUserData = await checkBackendAuth();
