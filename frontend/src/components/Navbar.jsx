@@ -1,29 +1,38 @@
 import { Link, useNavigate } from "react-router-dom";
-import { 
-  HiMiniBars3CenterLeft, 
-  HiOutlineHeart, 
+import {
+  HiMiniBars3CenterLeft,
+  HiOutlineHeart,
   HiOutlineShoppingCart,
   HiOutlineUser,
   HiOutlineHome,
   HiOutlineBookOpen,
-  HiOutlineShoppingBag
+  HiOutlineShoppingBag,
 } from "react-icons/hi2";
 import { IoSearchOutline, IoClose, IoLogOutOutline } from "react-icons/io5";
 import { useState, useRef, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { useAuth } from "../context/AuthContext";
+import { useGetFavoritesQuery } from "../redux/features/favorites/favoritesApi"; // Import favorites API
 
 const Navbar = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const cartItems = useSelector(state => state.cart.cartItems);
-  const { currentUser, logout, backendUser } = useAuth(); // Added backendUser
+  const cartItems = useSelector((state) => state.cart.cartItems);
+  const { currentUser, logout, backendUser } = useAuth();
   const navigate = useNavigate();
-  
+
   const dropdownRef = useRef(null);
   const mobileMenuRef = useRef(null);
+
+  // Fetch favorites count
+  const { data: favoritesData, isLoading: isFavoritesLoading } = useGetFavoritesQuery(undefined, {
+    skip: !backendUser, // Only fetch if user is logged in
+  });
+
+  // Calculate wishlist count
+  const wishlistCount = favoritesData?.length || 0;
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -31,16 +40,19 @@ const Navbar = () => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsDropdownOpen(false);
       }
-      if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target)) {
+      if (
+        mobileMenuRef.current &&
+        !mobileMenuRef.current.contains(event.target)
+      ) {
         setIsMobileMenuOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // FIXED: Enhanced logout handler
+  // Enhanced logout handler
   const handleLogOut = async () => {
     try {
       setIsDropdownOpen(false);
@@ -48,7 +60,7 @@ const Navbar = () => {
       await logout();
       // Navigation will happen automatically due to state changes
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error("Logout error:", error);
     }
   };
 
@@ -64,14 +76,17 @@ const Navbar = () => {
   const navigation = [
     { name: "Home", href: "/", icon: HiOutlineHome },
     { name: "Books", href: "/books", icon: HiOutlineBookOpen },
+    { name: "Wishlist", href: "/wishlist", icon: HiOutlineHeart },
     { name: "Dashboard", href: "/user-dashboard", icon: HiOutlineUser },
     { name: "Orders", href: "/orders", icon: HiOutlineShoppingBag },
     { name: "Cart", href: "/cart", icon: HiOutlineShoppingCart },
   ];
 
-  const totalCartItems = cartItems.reduce((total, item) => total + (item.quantity || 1), 0);
+  const totalCartItems = cartItems.reduce(
+    (total, item) => total + (item.quantity || 1),
+    0
+  );
 
-  // FIXED: Use backendUser for authentication check to be consistent
   const isAuthenticated = !!backendUser;
 
   return (
@@ -131,11 +146,14 @@ const Navbar = () => {
               className="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 relative group"
             >
               <HiOutlineHeart className="h-6 w-6" />
-              <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center hidden group-hover:flex">
-                0
-              </span>
+              {/* Wishlist Count Badge */}
+              {isAuthenticated && wishlistCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  {wishlistCount > 99 ? "99+" : wishlistCount}
+                </span>
+              )}
               <div className="absolute -bottom-10 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                Wishlist
+                Wishlist {isAuthenticated && `(${wishlistCount})`}
               </div>
             </Link>
 
@@ -147,7 +165,7 @@ const Navbar = () => {
               <HiOutlineShoppingCart className="h-6 w-6" />
               {totalCartItems > 0 && (
                 <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  {totalCartItems > 99 ? '99+' : totalCartItems}
+                  {totalCartItems > 99 ? "99+" : totalCartItems}
                 </span>
               )}
               <div className="absolute -bottom-10 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
@@ -157,21 +175,22 @@ const Navbar = () => {
 
             {/* User Menu */}
             <div className="relative" ref={dropdownRef}>
-              {isAuthenticated ? ( // FIXED: Use backendUser for consistent authentication state
+              {isAuthenticated ? (
                 <>
                   <button
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                     className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <div className="h-8 w-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                      {backendUser?.username?.charAt(0).toUpperCase() || 
-                       currentUser?.displayName?.charAt(0).toUpperCase() || 
-                       currentUser?.email?.charAt(0).toUpperCase() || 'U'}
+                      {backendUser?.username?.charAt(0).toUpperCase() ||
+                        currentUser?.displayName?.charAt(0).toUpperCase() ||
+                        currentUser?.email?.charAt(0).toUpperCase() ||
+                        "U"}
                     </div>
                     <span className="text-gray-700 font-medium hidden sm:block">
                       {backendUser?.username ||
-                       currentUser?.displayName || 
-                       currentUser?.email?.split('@')[0]}
+                        currentUser?.displayName ||
+                        currentUser?.email?.split("@")[0]}
                     </span>
                   </button>
 
@@ -181,7 +200,9 @@ const Navbar = () => {
                       {/* User Info */}
                       <div className="px-4 py-3 border-b border-gray-100">
                         <p className="text-sm font-medium text-gray-900">
-                          {backendUser?.username || currentUser?.displayName || 'User'}
+                          {backendUser?.username ||
+                            currentUser?.displayName ||
+                            "User"}
                         </p>
                         <p className="text-sm text-gray-500 truncate">
                           {backendUser?.email || currentUser?.email}
@@ -199,6 +220,17 @@ const Navbar = () => {
                           >
                             <item.icon className="h-5 w-5 mr-3" />
                             {item.name}
+                            {/* Show counts for wishlist and cart in dropdown */}
+                            {item.name === "Wishlist" && isAuthenticated && wishlistCount > 0 && (
+                              <span className="ml-auto bg-rose-100 text-rose-800 text-xs px-2 py-1 rounded-full">
+                                {wishlistCount}
+                              </span>
+                            )}
+                            {item.name === "Cart" && totalCartItems > 0 && (
+                              <span className="ml-auto bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                                {totalCartItems}
+                              </span>
+                            )}
                           </Link>
                         ))}
                       </div>
@@ -259,14 +291,23 @@ const Navbar = () => {
 
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
-          <div className="lg:hidden fixed inset-0 bg-white z-50" ref={mobileMenuRef}>
+          <div
+            className="lg:hidden fixed inset-0 bg-white z-50"
+            ref={mobileMenuRef}
+          >
             <div className="p-4">
               <div className="flex items-center justify-between mb-8">
-                <Link to="/" className="flex items-center" onClick={() => setIsMobileMenuOpen(false)}>
+                <Link
+                  to="/"
+                  className="flex items-center"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
                   <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center">
                     <span className="text-white font-bold text-sm">R</span>
                   </div>
-                  <span className="ml-2 text-xl font-bold text-gray-900">Readify</span>
+                  <span className="ml-2 text-xl font-bold text-gray-900">
+                    Readify
+                  </span>
                 </Link>
                 <button
                   onClick={() => setIsMobileMenuOpen(false)}
@@ -286,10 +327,21 @@ const Navbar = () => {
                   >
                     <item.icon className="h-6 w-6 mr-3" />
                     {item.name}
+                    {/* Show counts for wishlist and cart in mobile menu */}
+                    {item.name === "Wishlist" && isAuthenticated && wishlistCount > 0 && (
+                      <span className="ml-auto bg-rose-100 text-rose-800 text-xs px-2 py-1 rounded-full">
+                        {wishlistCount}
+                      </span>
+                    )}
+                    {item.name === "Cart" && totalCartItems > 0 && (
+                      <span className="ml-auto bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                        {totalCartItems}
+                      </span>
+                    )}
                   </Link>
                 ))}
-                
-                {isAuthenticated && ( // FIXED: Use consistent authentication check
+
+                {isAuthenticated && (
                   <button
                     onClick={handleLogOut}
                     className="flex items-center w-full px-4 py-3 text-lg text-red-600 hover:bg-red-50 rounded-lg transition-colors"

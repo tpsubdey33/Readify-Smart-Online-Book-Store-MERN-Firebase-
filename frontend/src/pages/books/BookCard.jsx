@@ -1,52 +1,34 @@
-import React, { useState } from 'react'
-import { FiShoppingCart, FiHeart, FiEye } from 'react-icons/fi'
-import { FaHeart, FaStar, FaRegStar } from 'react-icons/fa'
-import { Link } from 'react-router-dom'
-import { useDispatch } from 'react-redux'
-import { addToCart } from '../../redux/features/cart/cartSlice'
-import Swal from 'sweetalert2'
+import React, { useState } from "react";
+import { FiShoppingCart, FiEye } from "react-icons/fi";
+import { FaStar, FaRegStar } from "react-icons/fa";
+import { Link } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { addToCart } from "../../redux/features/cart/cartSlice";
+import Swal from "sweetalert2";
+import FavoriteButton from "../../components/FavoriteButton";
 
 const BookCard = ({ book }) => {
   const dispatch = useDispatch();
-  const [isFavorite, setIsFavorite] = useState(false);
   const [imageError, setImageError] = useState(false);
 
   const handleAddToCart = (product) => {
     // Check stock before adding to cart
     if (product.stock === 0) {
       Swal.fire({
-        title: 'Out of Stock',
-        text: 'This book is currently out of stock.',
-        icon: 'warning',
-        confirmButtonColor: '#3085d6',
+        title: "Out of Stock",
+        text: "This book is currently out of stock.",
+        icon: "warning",
+        confirmButtonColor: "#3085d6",
       });
       return;
     }
 
     dispatch(addToCart(product));
     Swal.fire({
-      title: 'Added to Cart!',
+      title: "Added to Cart!",
       text: `${product.title} has been added to your cart.`,
-      icon: 'success',
-      confirmButtonColor: '#10B981',
-      timer: 1500,
-      showConfirmButton: false,
-    });
-  };
-
-  const toggleFavorite = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsFavorite(!isFavorite);
-    
-    // Here you would typically call an API to update favorites
-    Swal.fire({
-      title: isFavorite ? 'Removed from Favorites' : 'Added to Favorites',
-      text: isFavorite 
-        ? 'Book removed from your favorites.' 
-        : 'Book added to your favorites!',
-      icon: 'success',
-      confirmButtonColor: '#10B981',
+      icon: "success",
+      confirmButtonColor: "#10B981",
       timer: 1500,
       showConfirmButton: false,
     });
@@ -57,15 +39,16 @@ const BookCard = ({ book }) => {
   };
 
   // Calculate discount percentage
-  const discountPercentage = book.oldPrice > book.newPrice 
-    ? Math.round(((book.oldPrice - book.newPrice) / book.oldPrice) * 100)
-    : 0;
+  const discountPercentage =
+    book.oldPrice > book.newPrice
+      ? Math.round(((book.oldPrice - book.newPrice) / book.oldPrice) * 100)
+      : 0;
 
   // Render star rating
   const renderRating = () => {
     const rating = book.rating?.average || 0;
     const stars = [];
-    
+
     for (let i = 1; i <= 5; i++) {
       stars.push(
         i <= rating ? (
@@ -75,7 +58,7 @@ const BookCard = ({ book }) => {
         )
       );
     }
-    
+
     return (
       <div className="flex items-center space-x-1">
         {stars}
@@ -86,27 +69,21 @@ const BookCard = ({ book }) => {
     );
   };
 
+  // Default image fallback
+  const defaultBookImage = "/images/default-book-cover.jpg";
+
   return (
     <div className="bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden group h-full flex flex-col">
       {/* Image Section */}
       <div className="relative overflow-hidden">
         <Link to={`/books/${book._id}`}>
           <div className="aspect-[3/4] bg-gray-100 relative">
-            {!imageError ? (
-              <img
-                src={book.coverImage}
-                alt={book.title}
-                onError={handleImageError}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                <div className="text-center text-gray-400">
-                  <div className="text-4xl mb-2">📚</div>
-                  <p className="text-sm">No Image</p>
-                </div>
-              </div>
-            )}
+            <img
+              src={imageError ? defaultBookImage : book.coverImage}
+              alt={book.title}
+              onError={handleImageError}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            />
           </div>
         </Link>
 
@@ -144,19 +121,16 @@ const BookCard = ({ book }) => {
 
         {/* Action Buttons */}
         <div className="absolute bottom-3 right-3 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          <button
-            onClick={toggleFavorite}
-            className="bg-white p-2 rounded-full shadow-md hover:bg-gray-50 transition-colors duration-200"
-          >
-            {isFavorite ? (
-              <FaHeart className="text-red-500 text-lg" />
-            ) : (
-              <FiHeart className="text-gray-600 text-lg" />
-            )}
-          </button>
+          {/* Replace local favorite button with FavoriteButton component */}
+          <FavoriteButton
+            bookId={book._id}
+            size="lg"
+            className="bg-white shadow-md hover:shadow-lg border border-gray-200"
+            showAlert={true}
+          />
           <Link
             to={`/books/${book._id}`}
-            className="bg-white p-2 rounded-full shadow-md hover:bg-gray-50 transition-colors duration-200"
+            className="bg-white p-2 rounded-full shadow-md hover:bg-gray-50 transition-colors duration-200 border border-gray-200"
           >
             <FiEye className="text-gray-600 text-lg" />
           </Link>
@@ -171,7 +145,9 @@ const BookCard = ({ book }) => {
             {book.category}
           </span>
           {book.subcategory && (
-            <span className="text-xs text-gray-500 ml-1">• {book.subcategory}</span>
+            <span className="text-xs text-gray-500 ml-1">
+              • {book.subcategory}
+            </span>
           )}
         </div>
 
@@ -197,9 +173,9 @@ const BookCard = ({ book }) => {
         <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-100">
           <div className="flex items-center space-x-2">
             <span className="text-lg font-bold text-gray-900">
-              ${book.newPrice}
+              ${book.newPrice || book.price}
             </span>
-            {book.oldPrice > book.newPrice && (
+            {book.oldPrice && book.oldPrice > (book.newPrice || book.price) && (
               <span className="text-sm text-gray-500 line-through">
                 ${book.oldPrice}
               </span>
@@ -211,12 +187,12 @@ const BookCard = ({ book }) => {
             disabled={book.stock === 0}
             className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-semibold transition-all duration-200 ${
               book.stock === 0
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-green-500 hover:bg-green-600 text-white shadow-md hover:shadow-lg transform hover:scale-105'
+                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                : "bg-green-500 hover:bg-green-600 text-white shadow-md hover:shadow-lg transform hover:scale-105"
             }`}
           >
             <FiShoppingCart className="text-lg" />
-            <span>{book.stock === 0 ? 'Out of Stock' : 'Add to Cart'}</span>
+            <span>{book.stock === 0 ? "Out of Stock" : "Add to Cart"}</span>
           </button>
         </div>
 

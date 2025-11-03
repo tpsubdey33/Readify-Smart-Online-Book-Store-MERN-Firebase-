@@ -18,27 +18,35 @@ import {
     MdDashboard 
 } from "react-icons/md";
 import { FiBook, FiUsers, FiShoppingCart } from 'react-icons/fi';
-
+import { useAuth } from '../../context/AuthContext'; // Import useAuth
 
 const DashboardLayout = () => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [user, setUser] = useState(null);
     const navigate = useNavigate();
     const location = useLocation();
+    const { logout, backendUser, currentUser } = useAuth(); // Get auth functions and user data
 
     useEffect(() => {
-        // Fetch user data or get from context
-        const userData = {
-            name: "Grace Simmons",
-            role: "Administrator",
-            avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face"
-        };
-        setUser(userData);
-    }, []);
+        // Use actual user data from AuthContext instead of hardcoded data
+        if (backendUser || currentUser) {
+            const userData = {
+                name: backendUser?.username || currentUser?.displayName || "Admin User",
+                role: backendUser?.role || "Administrator",
+                avatar: backendUser?.avatar || currentUser?.photoURL || "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face"
+            };
+            setUser(userData);
+        }
+    }, [backendUser, currentUser]);
 
-    const handleLogout = () => {
-        localStorage.removeItem('token');
-        navigate("/");
+    // FIXED: Use AuthContext logout function
+    const handleLogout = async () => {
+        try {
+            await logout();
+            navigate("/");
+        } catch (error) {
+            console.error('Logout error:', error);
+        }
     }
 
     // Navigation items
