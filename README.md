@@ -83,6 +83,8 @@ npm run start:dev
 
 http://localhost:5000/api-docs
 
+![Swagger UI Screenshot](./frontend/src/assets/Swagger.png)
+
 You’ll see a Swagger UI dashboard where you can:
 
 View all API endpoints (GET, POST, PUT, DELETE)
