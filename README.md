@@ -61,7 +61,9 @@ JWT_SECRET_KEY="bc992a20cb6706f741433686be814e3df45e57ea1c2fc85f9dbb0ef7df12308a
 ## 📚 API Documentation (Swagger UI)
 
 # 🔍 What is Swagger?
-    Swagger is an API documentation and testing tool that provides an interactive UI for exploring and testing backend APIs without using tools like Postman.
+    Swagger is an API documentation and testing tool that provides an interactive UI for exploring
+    
+     and testing backend APIs without using tools like Postman.
 It helps developers quickly understand available endpoints, request formats, and response structures.
 
 # ✅ Why Swagger is Used
@@ -108,6 +110,9 @@ npm run start:dev
  ┣ 📂 server/       → Node.js + Express + MongoDB backend
  ┣ 📄 .gitignore
  ┣ 📄 README.md
+
+
+
 
 🏁 Final Notes
 
