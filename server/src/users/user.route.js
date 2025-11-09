@@ -1,3 +1,4 @@
+// File: src/users/user.route.js
 const express = require('express');
 const User = require('./user.model');
 const jwt = require('jsonwebtoken');
@@ -180,6 +181,8 @@ const validateProfileUpdate = [
  *     description: User authentication and profile management
  *   - name: Users
  *     description: User management operations
+ *   - name: Admin
+ *     description: Admin management operations
  */
 
 /**
@@ -1222,6 +1225,410 @@ router.get("/verify-token", generalLimiter, verifyToken, async (req, res) => {
         res.status(401).json({
             success: false,
             message: "Token is invalid"
+        });
+    }
+});
+
+// =============================================
+// NEW ADMIN DASHBOARD ROUTES - ADDED BELOW
+// =============================================
+
+/**
+ * @swagger
+ * /auth/admin/users:
+ *   get:
+ *     summary: Get all users for admin dashboard
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Number of users per page
+ *       - in: query
+ *         name: role
+ *         schema:
+ *           type: string
+ *           enum: [user, bookseller, admin]
+ *         description: Filter by role
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Search by username or email
+ *     responses:
+ *       200:
+ *         description: Users list retrieved successfully
+ *       403:
+ *         description: Admin access required
+ *       500:
+ *         description: Server error
+ */
+router.get("/admin/users", generalLimiter, verifyToken, async (req, res) => {
+    try {
+        // Check if user is admin
+        if (req.user.role !== 'admin') {
+            return res.status(403).json({
+                success: false,
+                message: "Access denied. Admin privileges required."
+            });
+        }
+
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const { role, search } = req.query;
+        
+        const skip = (page - 1) * limit;
+        
+        let query = {};
+        
+        // Filter by role
+        if (role) {
+            query.role = role;
+        }
+        
+        // Search by username or email
+        if (search) {
+            query.$or = [
+                { username: { $regex: search, $options: 'i' } },
+                { email: { $regex: search, $options: 'i' } }
+            ];
+        }
+        
+        const users = await User.find(query)
+            .select('-password')
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit);
+            
+        const totalUsers = await User.countDocuments(query);
+        const totalPages = Math.ceil(totalUsers / limit);
+        
+        // Get user statistics
+        const userStats = await User.aggregate([
+            {
+                $group: {
+                    _id: '$role',
+                    count: { $sum: 1 }
+                }
+            }
+        ]);
+        
+        const stats = {
+            total: totalUsers,
+            users: userStats.find(stat => stat._id === 'user')?.count || 0,
+            booksellers: userStats.find(stat => stat._id === 'bookseller')?.count || 0,
+            admins: userStats.find(stat => stat._id === 'admin')?.count || 0
+        };
+
+        res.status(200).json({
+            success: true,
+            data: {
+                users,
+                pagination: {
+                    currentPage: page,
+                    totalPages,
+                    totalUsers,
+                    hasNext: page < totalPages,
+                    hasPrev: page > 1
+                },
+                stats
+            }
+        });
+    } catch (error) {
+        console.error("Error fetching users:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch users"
+        });
+    }
+});
+
+/**
+ * @swagger
+ * /auth/admin/booksellers:
+ *   get:
+ *     summary: Get all booksellers for admin dashboard
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Number of booksellers per page
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [pending, approved, rejected]
+ *         description: Filter by approval status
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Search by store name or email
+ *     responses:
+ *       200:
+ *         description: Booksellers list retrieved successfully
+ *       403:
+ *         description: Admin access required
+ *       500:
+ *         description: Server error
+ */
+router.get("/admin/booksellers", generalLimiter, verifyToken, async (req, res) => {
+    try {
+        // Check if user is admin
+        if (req.user.role !== 'admin') {
+            return res.status(403).json({
+                success: false,
+                message: "Access denied. Admin privileges required."
+            });
+        }
+
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const { status, search } = req.query;
+        
+        const skip = (page - 1) * limit;
+        
+        let query = { role: 'bookseller' };
+        
+        // Filter by approval status
+        if (status) {
+            query['profile.storeStatus'] = status;
+        }
+        
+        // Search by store name or email
+        if (search) {
+            query.$or = [
+                { 'profile.storeName': { $regex: search, $options: 'i' } },
+                { email: { $regex: search, $options: 'i' } },
+                { username: { $regex: search, $options: 'i' } }
+            ];
+        }
+        
+        const booksellers = await User.find(query)
+            .select('-password')
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit);
+            
+        const totalBooksellers = await User.countDocuments(query);
+        const totalPages = Math.ceil(totalBooksellers / limit);
+        
+        // Get bookseller statistics by status
+        const statusStats = await User.aggregate([
+            {
+                $match: { role: 'bookseller' }
+            },
+            {
+                $group: {
+                    _id: '$profile.storeStatus',
+                    count: { $sum: 1 }
+                }
+            }
+        ]);
+        
+        const stats = {
+            total: totalBooksellers,
+            pending: statusStats.find(stat => stat._id === 'pending')?.count || 0,
+            approved: statusStats.find(stat => stat._id === 'approved')?.count || 0,
+            rejected: statusStats.find(stat => stat._id === 'rejected')?.count || 0
+        };
+
+        res.status(200).json({
+            success: true,
+            data: {
+                booksellers,
+                pagination: {
+                    currentPage: page,
+                    totalPages,
+                    totalBooksellers,
+                    hasNext: page < totalPages,
+                    hasPrev: page > 1
+                },
+                stats
+            }
+        });
+    } catch (error) {
+        console.error("Error fetching booksellers:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch booksellers"
+        });
+    }
+});
+
+/**
+ * @swagger
+ * /auth/admin/users/{userId}:
+ *   get:
+ *     summary: Get user details by ID (Admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID
+ *     responses:
+ *       200:
+ *         description: User details retrieved successfully
+ *       403:
+ *         description: Admin access required
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Server error
+ */
+router.get("/admin/users/:userId", generalLimiter, verifyToken, async (req, res) => {
+    try {
+        // Check if user is admin
+        if (req.user.role !== 'admin') {
+            return res.status(403).json({
+                success: false,
+                message: "Access denied. Admin privileges required."
+            });
+        }
+
+        const { userId } = req.params;
+        
+        const user = await User.findById(userId).select('-password');
+        
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+        
+        // If bookseller, get additional stats
+        let additionalData = {};
+        if (user.role === 'bookseller') {
+            const Book = require('../books/book.model');
+            const Order = require('../orders/order.model');
+            
+            const totalBooks = await Book.countDocuments({ bookseller: userId });
+            const totalOrders = await Order.countDocuments({ 
+                'items.book.bookseller': userId 
+            });
+            
+            additionalData = {
+                totalBooks,
+                totalOrders
+            };
+        }
+
+        res.status(200).json({
+            success: true,
+            data: {
+                user,
+                ...additionalData
+            }
+        });
+    } catch (error) {
+        console.error("Error fetching user details:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch user details"
+        });
+    }
+});
+
+/**
+ * @swagger
+ * /auth/admin/users/{userId}/status:
+ *   put:
+ *     summary: Update user status (Admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - isActive
+ *             properties:
+ *               isActive:
+ *                 type: boolean
+ *                 description: User active status
+ *     responses:
+ *       200:
+ *         description: User status updated successfully
+ *       403:
+ *         description: Admin access required
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Server error
+ */
+router.put("/admin/users/:userId/status", generalLimiter, verifyToken, async (req, res) => {
+    try {
+        // Check if user is admin
+        if (req.user.role !== 'admin') {
+            return res.status(403).json({
+                success: false,
+                message: "Access denied. Admin privileges required."
+            });
+        }
+
+        const { userId } = req.params;
+        const { isActive } = req.body;
+        
+        const user = await User.findByIdAndUpdate(
+            userId,
+            { isActive },
+            { new: true }
+        ).select('-password');
+        
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: `User ${isActive ? 'activated' : 'deactivated'} successfully`,
+            data: user
+        });
+    } catch (error) {
+        console.error("Error updating user status:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to update user status"
         });
     }
 });
